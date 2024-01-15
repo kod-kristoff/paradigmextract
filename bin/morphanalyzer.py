@@ -58,21 +58,18 @@ def main(argv):
     for a in analyzers:
         print(a.encode('utf-8'))
 
-    if len(analyzers) > 0:
+    if analyzers:
         if Gseparate:
             for a in analyzernames:
-                print('regex ' + a + ';')
+                print(f'regex {a};')
         else:
             print('regex ' + u' .P. '.join(analyzernames) + ';')
-        print('save stack ' + Gname)
+        print(f'save stack {Gname}')
 
 
 def escape_fixed_string(string):
     """Fixed strings have _ to represent 0 (epsilon)."""
-    if string == '_':
-        return '0'
-    else:
-        return '{' + string + '}'
+    return '0' if string == '_' else '{' + string + '}'
 
 
 def nospace(string):
@@ -83,7 +80,7 @@ def paradigms_to_alphabet(paradigms):
     """Extracts all used symbols from an iterable of paradigms."""
     alphabet = set()
     for paradigm in paradigms:
-        for idx, (is_var, slot) in enumerate(paradigm.slots):
+        for is_var, slot in paradigm.slots:
             for word in slot:
                 alphabet |= set(word)
     return alphabet
@@ -97,38 +94,35 @@ def paradigms_to_foma(paradigms, grammarname, pval):
     par_is_constrained = {}
 
     alphabet = paradigms_to_alphabet(paradigms)
-    alphabet = {'"' + a + '"' for a in alphabet}
+    alphabet = {f'"{a}"' for a in alphabet}
     alphstring = 'def Alph ' + '|'.join(alphabet) + ';\n'
 
     for paradigm in paradigms:
         par_is_constrained[paradigm.name] = False
         parstrings = []
         for formnumber, form in enumerate(paradigm.forms):
-            tagstrings = map(lambda msd: '"' + msd[0] + '"' + ' = ' + '"' + msd[1] + '"', form.msd)
+            tagstrings = map(lambda msd: f'"{msd[0]}" = "{msd[1]}"', form.msd)
             parstring = ''
             for idx, (is_var, slot) in enumerate(paradigm.slots):
                 if is_var:
-                    parvarname = nospace(paradigm.name) + '=var' + str(idx)
+                    parvarname = f'{nospace(paradigm.name)}=var{str(idx)}'
                     if parvarname not in parvars:
                         r = genregex.Genregex(slot, pvalue=pval, length=False)
                         parvars[parvarname] = True
                         if fomaregex(r) != '?+':
                             par_is_constrained[paradigm.name] = True
-                        defstring += 'def ' + parvarname + ' ' + fomaregex(r).replace('?', 'Alph') + ';\n'
-                    parstring += ' [' + parvarname + '] '
+                        defstring += f'def {parvarname} ' + fomaregex(r).replace('?', 'Alph') + ';\n'
+                    parstring += f' [{parvarname}] '
                 else:
                     thisslot = escape_fixed_string(slot[formnumber])
                     baseformslot = escape_fixed_string(slot[0])
-                    parstring += ' [' + thisslot + ':' + baseformslot + '] '
+                    parstring += f' [{thisslot}:{baseformslot}] '
             parstring += '0:["[" ' + ' " " '.join(tagstrings) + ' "]"]'
             parstrings.append(parstring)
-        rstring += 'def ' + nospace(paradigm.name) + '|\n'.join(parstrings) + ';\n'
+        rstring += f'def {nospace(paradigm.name)}' + '|\n'.join(parstrings) + ';\n'
 
-    parnames = []
-    for paradigm in paradigms:
-        parnames.append(nospace(paradigm.name))
-
-    rstring += 'def ' + grammarname + ' ' + ' | '.join(parnames) + ';'
+    parnames = [nospace(paradigm.name) for paradigm in paradigms]
+    rstring += f'def {grammarname} ' + ' | '.join(parnames) + ';'
 
     return alphstring + defstring + rstring
 
@@ -165,10 +159,7 @@ def fomaregex(regex: genregex.Genregex):
         re.append('[?^{' + str(regex.lenrange[0]) + ',' + str(regex.lenrange[1]) + '}]')
     if len(regex.prefixset) > 0:
         re.append('[[' + '|'.join(map(explode, regex.prefixset)) + '] ?*]')
-    if len(re) == 0:
-        return u'?+'
-    else:
-        return ' & '.join(re)
+    return u'?+' if not re else ' & '.join(re)
 
 
 if __name__ == "__main__":

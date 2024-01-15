@@ -229,12 +229,9 @@ def _string_to_varstring(string, variables):
                 if idx < len(string) - 1:
                     s.append("+")
                 varpos += 1
-            idx += 1
-            continue
         else:
             s.append(string[idx])
-            idx += 1
-
+        idx += 1
     return "".join(s)
 
 
@@ -245,10 +242,7 @@ def _lcp(lst):
     cleanlst = list(map(lambda x: x.replace("[", "").replace("]", ""), lst))
     s1 = min(cleanlst)
     s2 = max(cleanlst)
-    for i, c in enumerate(s1):
-        if c != s2[i]:
-            return s1[:i]
-    return s1
+    return next((s1[:i] for i, c in enumerate(s1) if c != s2[i]), s1)
 
 
 def _firstvarmatch(string, prefix) -> bool:
@@ -270,9 +264,8 @@ def _evalfact(lcs, c):
             elif pos == "]":
                 inside = 0
                 breaks[p - 1] = 1
-            else:
-                if inside:
-                    p += 1
+            elif inside:
+                p += 1
 
         allbreaks.append(breaks)
     finalbreaks = [0] * len(lcs)

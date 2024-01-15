@@ -2,8 +2,6 @@ from paradigmextract.pextract import _collapse_tables
 
 
 def test1():
-    filteredtables = []
-
     idform = "stad"
     idtag = ("msd", "sg indef nom")
     table = ["stad", "städer", "stads"]
@@ -13,15 +11,14 @@ def test1():
     numvars = 2
     infixcount = 3
     tags = [("msd", "sg indef nom"), ("msd", "pl indef nom"), ("msd", "sg indef gen")]
-    filteredtables.append(
+    filteredtables = [
         (
             idform,
             idtag,
             [table, c, variable_table, variablelist, numvars, infixcount],
             tags,
         )
-    )
-
+    ]
     idform = "bad"
     idtag = ("msd", "sg indef nom")
     table = ["bad", "bäder", "bads"]
@@ -50,8 +47,6 @@ def test1():
 
 
 def test2():
-    filteredtables = []
-
     idform = "bord"
     idtag = ("msd", "sg indef nom")
     table = ["bord", "bord", "bords"]
@@ -61,15 +56,14 @@ def test2():
     numvars = 1
     infixcount = 0
     tags = [("msd", "sg indef nom"), ("msd", "pl indef nom"), ("msd", "sg indef gen")]
-    filteredtables.append(
+    filteredtables = [
         (
             idform,
             idtag,
             [table, c, variable_table, variablelist, numvars, infixcount],
             tags,
         )
-    )
-
+    ]
     idform = "bad"
     idtag = ("msd", "sg indef nom")
     table = ["bad", "bäder", "bads"]

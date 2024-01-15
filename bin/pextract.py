@@ -8,8 +8,7 @@ def split_tags(tags: List) -> List[List[Tuple[str, str]]]:
     spl = [tg.split(",,") for tg in tags]
 
     newforms = []
-    ctr = 1
-    for form in spl:
+    for ctr, form in enumerate(spl, start=1):
         newelement = []
         for tagelement in form:
             if tagelement == "":
@@ -20,7 +19,6 @@ def split_tags(tags: List) -> List[List[Tuple[str, str]]]:
             else:
                 newelement.append((tagelement, "1"))
         newforms.append(newelement)
-        ctr += 1
     return newforms
 
 
@@ -50,6 +48,6 @@ if __name__ == "__main__":
         tables.append((thistable, splittags))
 
     learnedparadigms = pextract.learnparadigms(tables)
-    for p in learnedparadigms:
+    for _ in learnedparadigms:
         # print(str(p) + '\n\n')
         print("a paradigm")

@@ -131,10 +131,10 @@ def build(
 
     numexamples = sum(map(lambda x: x.count, paradigms))
 
-    lms = {}
-    # Learn n-gram LM for each variable
-    for p in paradigms:
-        lms[p.uuid] = _lms_paradigm(p, alphabet, ngramorder, ngramprior)
+    lms = {
+        p.uuid: _lms_paradigm(p, alphabet, ngramorder, ngramprior)
+        for p in paradigms
+    }
     return paradigms, numexamples, lms, alphabet
 
 

@@ -5,10 +5,7 @@ str_s = 's'
 
 
 def tr(s):
-    if s.isdigit():
-        return s
-    else:
-        return str_s
+    return s if s.isdigit() else str_s
 
 
 def variables(xs):
@@ -42,10 +39,10 @@ def patterns(wfs):
     if vs:
         return [str_s]
     for v in vs:
-        if before(v, ps) and (len(result) == 0 or result[-1].isdigit()):
+        if before(v, ps) and (not result or result[-1].isdigit()):
             result.append(str_s)
         result.append(v)
-        if after(v, ps) and (len(result) == 0 or result[-1].isdigit()):
+        if after(v, ps) and (not result or result[-1].isdigit()):
             result.append(str_s)
     return result
 

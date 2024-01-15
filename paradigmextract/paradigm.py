@@ -25,7 +25,7 @@ class Paradigm:
         pos: str = "",
         uuid: str = "",
     ) -> None:
-        logging.debug("make paradigm %s %s" % (p_id, uuid))
+        logging.debug(f"make paradigm {p_id} {uuid}")
         self._p_info: Dict[str, Any] = {}
         self.forms = []
         self.pos = pos
@@ -33,8 +33,7 @@ class Paradigm:
         self.var_insts = var_insts
         self.p_id = p_id
 
-        for (f, msd) in form_msds:
-            self.forms.append(Form(f, msd, var_insts))
+        self.forms.extend(Form(f, msd, var_insts) for f, msd in form_msds)
 
     def __getattr__(self, attr):
         """
@@ -43,23 +42,21 @@ class Paradigm:
         """
         if len(self._p_info) > 0:
             return self._p_info[attr]
+        if self.p_id:
+            self._p_info["name"] = self.p_id
+        if len(self.var_insts) == 0:
+            if not self.p_id:
+                self._p_info["name"] = f"p_{self.__call__()[0][0]}"
+            self._p_info["members"] = []
+            self._p_info["count"] = 0
         else:
-            if self.p_id:
-                self._p_info["name"] = self.p_id
-            if len(self.var_insts) != 0:
-                if not self.p_id:
-                    self._p_info["name"] = (
-                        "p_%s"
-                        % self.__call__(*[s for (_, s) in self.var_insts[0][1:]])[0][0]
-                    )
-                self._p_info["count"] = len(self.var_insts)
-                self._p_info["members"] = [var[0][1] for var in self.var_insts]
-            else:
-                if not self.p_id:
-                    self._p_info["name"] = "p_%s" % self.__call__()[0][0]
-                self._p_info["members"] = []
-                self._p_info["count"] = 0
-            self._p_info["slots"] = self.__slots()
+            if not self.p_id:
+                self._p_info[
+                    "name"
+                ] = f"p_{self.__call__(*[s for _, s in self.var_insts[0][1:]])[0][0]}"
+            self._p_info["count"] = len(self.var_insts)
+            self._p_info["members"] = [var[0][1] for var in self.var_insts]
+        self._p_info["slots"] = self.__slots()
         return self._p_info[attr]
 
     def __slots(self) -> List[Tuple[bool, Any]]:
@@ -178,13 +175,13 @@ class Form:
             for (i, v) in vs:
                 collect_vars[i].add(v)
         self.v_regex = []
-        for (_, ss) in collect_vars.items():
+        for ss in collect_vars.values():
             try:
                 self.v_regex.append(
                     re.compile(genregex.Genregex(ss, pvalue=0.05).pyregex())
                 )
             except:
-                logging.error("error reading %s!" % ss)
+                logging.error(f"error reading {ss}!")
                 raise
 
     def __call__(self, *insts):
@@ -220,34 +217,31 @@ class Form:
             return []
         if not constrained:
             return [(self.scount, m) for m in ms]
-        else:
-            result = []
-            for vs in ms:
-                if isinstance(vs, str):
-                    var_and_reg = [(vs, self.v_regex[0])]
+        result = []
+        for vs in ms:
+            var_and_reg = (
+                [(vs, self.v_regex[0])]
+                if isinstance(vs, str)
+                else zip(vs, self.v_regex)
+            )
+            vcount = 0
+            m_all = True
+            for (s, r) in var_and_reg:
+                m = r.match(s)
+                if m is None:
+                    return None
+                xs = m.groups()  # .+-matches have no grouping
+                if len(xs) > 0 or r.pattern == ".+":
+                    if r.pattern != ".+":
+                        vcount += len(
+                            "".join(xs)
+                        )  # select the variable specificity
                 else:
-                    var_and_reg = zip(vs, self.v_regex)
-                vcount = 0
-                m_all = True
-                for (s, r) in var_and_reg:
-                    m = r.match(s)
-                    if m is None:
-                        return None
-                    xs = m.groups()  # .+-matches have no grouping
-                    if len(xs) > 0 or r.pattern == ".+":
-                        if r.pattern != ".+":
-                            vcount += len(
-                                "".join(xs)
-                            )  # select the variable specificity
-                    else:
-                        m_all = False
-                        break
-                if m_all:
-                    result.append((self.scount + vcount, vs))
-            if result:
-                return None
-            else:
-                return result
+                    m_all = False
+                    break
+            if m_all:
+                result.append((self.scount + vcount, vs))
+        return None if result else result
 
     def strs(self) -> List[str]:
         """Collects the strings in a wordform.
@@ -268,15 +262,11 @@ class Form:
     def __str__(self) -> str:
         ms = []
         for (t, v) in self.msd:
-            if t is not None:
-                if v is not None:
-                    ms.append("%s=%s" % (t, v))
-                else:
-                    ms.append(t)
-            else:
+            if t is None:
                 if v is not None:
                     ms.append(v)
-        if len(ms) == 0:
-            return "+".join(self.form)
-        else:
-            return "%s::%s" % ("+".join(self.form), ",,".join(ms))
+            elif v is not None:
+                ms.append(f"{t}={v}")
+            else:
+                ms.append(t)
+        return f'{"+".join(self.form)}::{",,".join(ms)}' if ms else "+".join(self.form)
