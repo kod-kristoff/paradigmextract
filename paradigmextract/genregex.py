@@ -80,10 +80,7 @@ class Genregex:
             re += '(?=.{' + str(self.lenrange[0]) + ',' + str(self.lenrange[1]) + '}$)'
         if len(self.prefixset) > 0:
             re += '(' + '|'.join(self.prefixset) + ')'
-        if len(re) == 0:
-            return u'.+'
-        else:
-            return '^' + re
+        return u'.+' if not re else f'^{re}'
     
     def _significancetest(self, num: int, uniq: int):
         return (1.0-(1.0/(uniq+1.0))) ** num <= self.pvalue

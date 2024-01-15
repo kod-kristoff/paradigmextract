@@ -35,12 +35,12 @@ import paradigmextract.paradigm as paradigm
 def build(inpfile: str, ngramorder: int, ngramprior: float, small: bool = False, lexicon: str = '',
           inpformat: str = 'pfile',
           pos: str = '') -> Tuple[List[paradigm.Paradigm], int, Dict[str, Tuple[float, List[morphparser.StringNgram]]], Set[str]]:
-    if inpformat == 'pfile':
-        paradigms = paradigm.load_p_file(inpfile, lex=lexicon)
+    if inpformat == 'json':
+        paradigms = paradigm.load_json(json.loads(inpfile), lex=lexicon, pos=pos)
     elif inpformat == 'jsonfile':
         paradigms = paradigm.load_json_file(inpfile, lex=lexicon, pos=pos)
-    elif inpformat == 'json':
-        paradigms = paradigm.load_json(json.loads(inpfile), lex=lexicon, pos=pos)
+    elif inpformat == 'pfile':
+        paradigms = paradigm.load_p_file(inpfile, lex=lexicon)
     else:
         raise RuntimeError('Wrong input format')
 
@@ -71,32 +71,48 @@ def main(argv):
             ngramprior = float(arg)
         elif opt in ('-d', '--debug'):
             debug = True
-        elif opt in ('-d', '--debug'):
-            debug = True
         elif opt in ('-r', '--pprior'):
             pprior = float(arg)
     inp = iter(lambda: sys.stdin.readline().decode('utf-8'), '')
     paras, numexamples, lms, alphabet = build(sys.argv[1], ngramorder, ngramprior)
-    res = []
-    for line in inp:
-        res.append(morphparser.test_paradigms(line, paras, numexamples, lms, pprior))
-
+    res = [
+        morphparser.test_paradigms(line, paras, numexamples, lms, pprior)
+        for line in inp
+    ]
     for words, analyses in res:
         # Print all analyses + optionally a table
         for aindex, (score, p, v) in enumerate(analyses):
             if aindex >= kbest:
                 break
-            varstring = '(' + ','.join([str(feat) + '=' + val for feat, val in zip(range(1, len(v)+1), v)]) + ')'
+            varstring = (
+                '('
+                + ','.join(
+                    [
+                        f'{str(feat)}={val}'
+                        for feat, val in zip(range(1, len(v) + 1), v)
+                    ]
+                )
+                + ')'
+            )
             table = p(*v)          # Instantiate table with vars from analysis
             baseform = table[0][0]
             matchtable = [(form, msd) for form, msd in table if form in words]
-            wordformlist = [form + ':' + baseform + ',' + ','.join([m[0] + '=' + m[1] for m in msd]) for form, msd in matchtable]
-            print((str(score) + ' ' + p.name + ' ' + varstring + ' ' + '#'.join(wordformlist)).encode("utf-8"))
+            wordformlist = [
+                f'{form}:{baseform},'
+                + ','.join([f'{m[0]}={m[1]}' for m in msd])
+                for form, msd in matchtable
+            ]
+            print(
+                (
+                    f'{str(score)} {p.name} {varstring} '
+                    + '#'.join(wordformlist)
+                ).encode("utf-8")
+            )
             if print_tables:
                 for form, msd in table:
                     if form in words:
-                        form = "*" + form + "*"
-                    msdprint = ','.join([m[0] + '=' + m[1] for m in msd])
+                        form = f"*{form}*"
+                    msdprint = ','.join([f'{m[0]}={m[1]}' for m in msd])
                     print((form + '\t' + msdprint).encode("utf-8"))
 
             if debug:

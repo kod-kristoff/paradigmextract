@@ -52,8 +52,6 @@ class MRegex:
         if self.regex[regindex : regindex + 4] == "(.+)":
             for i in range(strindex + 1, self.textlen + 1):
                 self.match(i, regindex + 4, groups + [(strindex, i)])
-        # Normal match (one character)
-        else:
-            if self.text[strindex] == self.regex[regindex]:
-                self.match(strindex + 1, regindex + 1, groups)
+        elif self.text[strindex] == self.regex[regindex]:
+            self.match(strindex + 1, regindex + 1, groups)
         return

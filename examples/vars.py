@@ -22,13 +22,10 @@ def main():
                 vc = len(d)
                 count = None
                 for (j, xs) in d.items():
-                    if all([len(x) <= 5 for x in xs]):
+                    if all(len(x) <= 5 for x in xs):
                         d2[j] = set(xs)
-                        if count is None:
-                            count = len(d2[j])
-                        else:
-                            count = min(count, len(d2[j]))
-                if len(d2) > 0 and pc > count:
+                        count = len(d2[j]) if count is None else min(count, len(d2[j]))
+                if d2 and pc > count:
                     result.append((pc, p_name, vc, d2))
             result.sort(reverse=True)
             for (pc, p_name, vc, d2) in result:
