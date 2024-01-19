@@ -1,58 +1,102 @@
-from typing import Optional, Tuple
+/// Simple re.findall replacement that returns all possible matches -
+/// not just the leftmost-longest match.
+/// Only handles (.+) and c constructs (c being an arbitrary character).
+/// Expressions are automatically anchored in the head and the tail,
+/// i.e. the regexes behave as if they began with ^ and ended with $.
+///
+/// # Examples
+/// ````
+/// use paradigmextract::regexmatcher::MRegex;
+/// let mut m = MRegex::new("(.+)a(.+)as");
+/// let word = "bananas";
+/// let result = m.findall(word);
+/// assert_eq!(result, Some(vec![vec!("b", "nan"), vec!("ban", "n")]));
+/// ````
+pub struct MRegex {
+    regex: String,
+    state: MatchState,
+}
 
+struct MatchState {
+    textlen: usize,
+    matched: bool,
+    results: Vec<Vec<(usize, usize)>>,
+}
 
-class MRegex:
-    """Simple re.findall replacement that returns all possible matches -
-    not just the leftmost-longest match.
-    Only handles (.+) and c constructs (c being an arbitrary character).
-    Expressions are automatically anchored in the head and the tail,
-    i.e. the regexes behave as if they began with ^ and ended with $.
+impl Default for MatchState {
+    fn default() -> Self {
+        Self {
+            textlen: 0,
+            matched: false,
+            results: Vec::default(),
+        }
+    }
+}
 
-    Example usage:
-    >>> from paradigmextract.regexmatcher import MRegex
-    >>> m = MRegex('(.+)a(.+)as')
-    >>> m.findall('bananas')
-    [('b', 'nan'), ('ban', 'n')]
-    """
+impl MatchState {
+    fn new(text: &str) -> Self {
+        Self {
+            textlen: text.len(),
+            matched: false,
+            results: Vec::default(),
+        }
+    }
+}
+impl MRegex {
+    pub fn new<S: Into<String>>(regex: S) -> MRegex {
+        Self {
+            regex: regex.into(),
+            state: MatchState::default(),
+        }
+    }
 
-    def __init__(self, regex: str):
-        self.regex = regex
-        self.regexlen = len(regex)
-        self.text = ""
-        self.textlen = 0
-        # self.matches: list = []
-        self.results: list[list[Tuple[int, int]]] = []
-        self.matched = False
+    pub fn findall<'a>(&mut self, text: &'a str) -> Option<Vec<Vec<&'a str>>> {
+        let strindex = 0;
+        let regindex = 0;
+        self.state = MatchState::new(text);
+        self.r#match(text, strindex, regindex, vec![]);
+        if self.state.matched {
+            let result = self
+                .state
+                .results
+                .iter()
+                .map(|r| r.into_iter().map(|(i, j)| &text[*i..*j]).collect())
+                .collect();
+            return Some(result);
+        }
+        return None;
+    }
 
-    def findall(self, text: str) -> Optional[list[Tuple[str, ...]]]:
-        strindex = 0
-        regindex = 0
-        self.text = text
-        self.textlen = len(text)
-        self.results = []
-        self.matched = False
-        self.match(strindex, regindex, [])
-        if self.matched:
-            return [tuple(self.text[i:j] for i, j in r) for r in self.results]
-        return None
-
-    def match(
-        self, strindex: int, regindex: int, groups: list[Tuple[int, int]]
-    ) -> None:
-        # Are we at end of regex _1and_ text?
-        if strindex == self.textlen and regindex == self.regexlen:
-            self.matched = True
-            if groups:
-                self.results.append(groups)
-            return
-        # Jump out if only regex or text is consumed
-        if strindex == self.textlen or regindex == self.regexlen:
-            return
-        # Match (.+)-construct
-        if self.regex[regindex : regindex + 4] == "(.+)":
-            for i in range(strindex + 1, self.textlen + 1):
-                self.match(i, regindex + 4, [*groups, (strindex, i)])
-        # Normal match (one character)
-        elif self.text[strindex] == self.regex[regindex]:
-            self.match(strindex + 1, regindex + 1, groups)
-        return
+    fn r#match(
+        &mut self,
+        text: &str,
+        strindex: usize,
+        regindex: usize,
+        groups: Vec<(usize, usize)>,
+    ) {
+        // Are we at end of regex _1and_ text?
+        if strindex == self.state.textlen && regindex == self.regex.len() {
+            self.state.matched = true;
+            if groups.len() > 0 {
+                self.state.results.push(groups);
+            }
+            return;
+        }
+        // Jump out if only regex or text is consumed
+        if strindex == self.state.textlen || regindex == self.regex.len() {
+            return;
+        }
+        // Match (.+)-construct
+        if (regindex + 4) <= self.regex.len() && &self.regex[regindex..regindex + 4] == "(.+)" {
+            for i in (strindex + 1)..(self.state.textlen + 1) {
+                let mut groups_clone = groups.clone();
+                groups_clone.push((strindex, i));
+                self.r#match(text, i, regindex + 4, groups_clone);
+            }
+        }
+        // Normal match (one character)
+        else if &text[strindex..(strindex + 1)] == &self.regex[regindex..(regindex + 1)] {
+            self.r#match(text, strindex + 1, regindex + 1, groups);
+        }
+    }
+}
