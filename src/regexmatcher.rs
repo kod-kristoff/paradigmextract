@@ -74,6 +74,7 @@ impl MRegex {
         regindex: usize,
         groups: Vec<(usize, usize)>,
     ) {
+        println!("strindex={strindex},regindex={regindex}");
         // Are we at end of regex _1and_ text?
         if strindex == self.state.textlen && regindex == self.regex.len() {
             self.state.matched = true;
@@ -95,7 +96,9 @@ impl MRegex {
             }
         }
         // Normal match (one character)
-        else if &text[strindex..(strindex + 1)] == &self.regex[regindex..(regindex + 1)] {
+        else if &text.as_bytes()[strindex..(strindex + 1)]
+            == &self.regex.as_bytes()[regindex..(regindex + 1)]
+        {
             self.r#match(text, strindex + 1, regindex + 1, groups);
         }
     }

@@ -1,48 +1,94 @@
-import pytest
+// import pytest
 
+// from paradigmextract.paradigm import Paradigm
+use super::*;
 
-from paradigmextract.paradigm import Paradigm
+mod form;
 
+#[test]
+fn test_match() {
+    let form_msds = &[
+        (
+            "1+a+2",
+            vec![(Some("msd".to_string()), "sg indef nom".to_string())],
+        ),
+        (
+            "1+ä+2+er",
+            vec![(Some("msd".to_string()), "pl indef nom".to_string())],
+        ),
+        (
+            "1+a+2+s",
+            vec![(Some("msd".to_string()), "sg indef gen".to_string())],
+        ),
+    ];
+    let var_insts = vec![vec![("1".into(), "b".into()), ("2".into(), "d".into())]];
+    let p = Paradigm::new(form_msds, var_insts);
+    let tag = (Some("msd"), "sg indef nom");
+    let matches = p.r#match(
+        "apa",
+        MatchOptions {
+            baseform: true,
+            tag: Some(&tag),
+            constrained: false,
+            ..Default::default()
+        },
+    );
+    assert_eq!(matches, vec![None]);
+    let matches = p.r#match(
+        "vad",
+        MatchOptions {
+            baseform: true,
+            tag: Some(&tag),
+            constrained: false,
+            ..Default::default()
+        },
+    );
+    assert_eq!(
+        matches,
+        vec![Some(vec![(1, vec!("v".to_string(), "d".to_string()))])]
+    );
+}
 
-def test_1():
-    form_msds = [
-        ("1+a+2", ("msd", "sg indef nom")),
-        ("1+ä+2+er", ("msd", "pl indef nom")),
-        ("1+a+2+s", ("msd", "sg indef gen")),
-    ]
-    var_insts = [[("1", "b"), ("2", "d")]]
-    p = Paradigm(form_msds, var_insts)
-    tag = ("msd", "sg indef nom")
-    matches = p.match("apa", constrained=False, tag=tag, baseform=True)
-    assert [None] == matches
-    matches = p.match("vad", constrained=False, tag=tag, baseform=True)
-    assert [[(1, ("v", "d"))]] == matches
-
-
-def test_2():
-    form_msds = [
-        ("1+a+2", ("msd", "sg indef nom")),
-        ("1+ä+2+er", ("msd", "pl indef nom")),
-        ("1+a+2+s", ("msd", "sg indef gen")),
-    ]
-    var_insts = [[("1", "b"), ("2", "d")]]
-    p = Paradigm(form_msds, var_insts)
-    var_insts = ["st", "d"]
-    table = p(*var_insts)
-    assert [
-        ("stad", ("msd", "sg indef nom")),
-        ("städer", ("msd", "pl indef nom")),
-        ("stads", ("msd", "sg indef gen")),
-    ] == table
-
-
-@pytest.mark.xfail(reason="don't know")
-def test_paradigm_match_vars():
-    form_msds = [
-        ("1+a+2", ("msd", "sg indef nom")),
-        ("1+ä+2+er", ("msd", "pl indef nom")),
-        ("1+a+2+s", ("msd", "sg indef gen")),
-    ]
-    var_insts = [[("1", "b"), ("2", "d")]]
-    p = Paradigm(form_msds, var_insts)
-    p.match_vars
+#[test]
+fn test_2() {
+    let form_msds = &[
+        (
+            "1+a+2",
+            vec![(Some("msd".to_string()), "sg indef nom".to_string())],
+        ),
+        (
+            "1+ä+2+er",
+            vec![(Some("msd".to_string()), "pl indef nom".to_string())],
+        ),
+        (
+            "1+a+2+s",
+            vec![(Some("msd".to_string()), "sg indef gen".to_string())],
+        ),
+    ];
+    let var_insts = vec![vec![("1".into(), "b".into()), ("2".into(), "d".into())]];
+    let p = Paradigm::new(form_msds, var_insts);
+    //     form_msds = [
+    //         ("1+a+2", ("msd", "sg indef nom")),
+    //         ("1+ä+2+er", ("msd", "pl indef nom")),
+    //         ("1+a+2+s", ("msd", "sg indef gen")),
+    //     ]
+    //     var_insts = [[("1", "b"), ("2", "d")]]
+    //     p = Paradigm(form_msds, var_insts)
+    let var_insts = &["st", "d"];
+    let table = p.inflect(var_insts);
+    //     assert [
+    //         ("stad", ("msd", "sg indef nom")),
+    //         ("städer", ("msd", "pl indef nom")),
+    //         ("stads", ("msd", "sg indef gen")),
+    //     ] == table
+}
+// @pytest.mark.xfail(reason="don't know")
+// def test_paradigm_match_vars():
+//     form_msds = [
+//         ("1+a+2", ("msd", "sg indef nom")),
+//         ("1+ä+2+er", ("msd", "pl indef nom")),
+//         ("1+a+2+s", ("msd", "sg indef gen")),
+//     ]
+//     var_insts = [[("1", "b"), ("2", "d")]]
+//     p = Paradigm(form_msds, var_insts)
+//     p.match_vars

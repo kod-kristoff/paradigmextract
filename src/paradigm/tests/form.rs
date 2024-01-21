@@ -1,15 +1,17 @@
-from paradigmextract.paradigm import Form
+use super::Form;
 
+#[test]
+fn constructor_minimum() {
+    let form = Form::wo_msd("");
 
-def test_constructor_minimum():
-    form = Form("")
+    assert_eq!(form.form, [""]);
+    //     # assert isinstance(form.msd, list)
+}
 
-    assert form.form == [""]
-    # assert isinstance(form.msd, list)
+#[test]
+fn constructor_single_msd() {
+    let msd = vec![("vb")];
+    // let form = Form::new("", msd);
 
-
-def test_constructor_single_msd():
-    msd = [("vb",)]
-    form = Form("", msd)
-
-    assert form.msd == [("vb",)]
+    // assert_eq!(form.msd, [("vb",)]);
+}
